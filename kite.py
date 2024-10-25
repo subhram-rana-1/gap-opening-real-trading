@@ -16,6 +16,20 @@ INDEX_PRICES: List[float] = []
 # CONSTANTS --------------------------------
 nse_instrument_json_file_path = './instruments/nse.json'
 nfo_instrument_json_file_path = './instruments/nfo.json'
+MONTH_NUMBER_TO_OPTION_MONTH_SYMBOL_MAP = {
+    1: 'JAN',
+    2: 'FEB',
+    3: 'MAR',
+    4: 'APR',
+    5: 'MAY',
+    6: 'JUN',
+    7: 'JLU',
+    8: 'AUG',
+    9: 'SEP',
+    10: 'OCT',
+    11: 'NOV',
+    12: 'DEC',
+}
 # ------------------------------------------
 
 
@@ -158,17 +172,32 @@ def get_stock_token_from_stock_symbol(stock_symbol: str) -> int:
     return instrument['instrument_token']
 
 
-def get_atm_strike_for_price(price: float) -> int:
-    # TODO
-    return 25600
+def get_atm_strike_for_price(price: float, ce_or_pe: str) -> int:
+    lower_strike_price = int((price // 100) * 100)
+    upper_strike_price = lower_strike_price + 100
+
+    if ce_or_pe == 'ce':
+        return lower_strike_price
+    elif ce_or_pe == 'pe':
+        return upper_strike_price
+    else:
+        raise Exception(f'wrong ce_or_pe: {ce_or_pe}')
 
 
 def get_weekly_pe_contract_trading_symbol(strike: int) -> str:
-    """TODO: fetch from global instrument variable"""
+    cur_month_num = datetime.now().date().month
+    cur_month_str = MONTH_NUMBER_TO_OPTION_MONTH_SYMBOL_MAP[cur_month_num]
+
+    pe_monthly_contract_trading_symbol = f'NIFTY24{cur_month_str}{strike}PE'
+    return pe_monthly_contract_trading_symbol
 
 
 def get_weekly_ce_contract_trading_symbol(strike: int) -> str:
-    """TODO: fetch from global instrument variable"""
+    cur_month_num = datetime.now().date().month
+    cur_month_str = MONTH_NUMBER_TO_OPTION_MONTH_SYMBOL_MAP[cur_month_num]
+
+    pe_monthly_contract_trading_symbol = f'NIFTY24{cur_month_str}{strike}CE'
+    return pe_monthly_contract_trading_symbol
 
 
 def place_order(
@@ -190,24 +219,17 @@ def place_order(
         return order_id
     except Exception as e:
         print("[PLACE ORDER MANUALLY NOWWWW] Order placement failed: {}".format(e))
+        raise
 
 
 def exit_order(
-        trading_symbol: str,
-        qty: int,
-) -> str:
+        order_id: str,
+):
     try:
-        order_id = KITE_CONNECT_CLIENT.place_order(
-            variety=KITE_CONNECT_CLIENT.VARIETY_REGULAR,
-            tradingsymbol=trading_symbol,
-            exchange=KITE_CONNECT_CLIENT.EXCHANGE_NFO,
-            transaction_type=KITE_CONNECT_CLIENT.TRANSACTION_TYPE_SELL,
-            quantity=qty,
-            order_type=KITE_CONNECT_CLIENT.ORDER_TYPE_MARKET,
-            product=KITE_CONNECT_CLIENT.PRODUCT_MIS,
-            validity=KITE_CONNECT_CLIENT.VALIDITY_DAY,
+        KITE_CONNECT_CLIENT.exit_order(
+            variety=KITE_CONNECT_CLIENT.VARIETY_AMO,
+            order_id=order_id,
         )
-
-        return order_id
     except Exception as e:
         print("[ALEEEEEEERT !!!, Exit order manually Nowwwwwww...] Order exit failed: {}".format(e))
+        raise

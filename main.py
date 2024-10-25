@@ -1,4 +1,4 @@
-import time
+import time as tm
 from datetime import datetime, time
 from configs import trading_config
 from configs.trading_config import QTY
@@ -31,7 +31,7 @@ def start_strategy(prev_market_day_closing_price: float):
     3. keep track of SL and target and exit accordingly
     """
     while len(INDEX_PRICES) == 0:
-        time.sleep(0.1)  # sleep 100 ms
+        tm.sleep(0.1)  # sleep 100 ms
 
     # 1st tick has come
     opening_price: float = INDEX_PRICES[0]
@@ -48,12 +48,12 @@ def start_strategy(prev_market_day_closing_price: float):
     target: float = None
     stoploss: float = None
     option_contract_trading_symbol: str = None
-
-    atm_strike: int = get_atm_strike_for_price(opening_price)
+    atm_strike: int = None
 
     if gap > abs(trading_config.THRESHOLD_GAP):
         print(f'I will take short entry for {atm_strike} for {QTY} quantity')
 
+        atm_strike = get_atm_strike_for_price(opening_price, 'pe')
         option_contract_trading_symbol = get_weekly_pe_contract_trading_symbol(atm_strike)
         entry_type = 'short'
         stoploss = opening_price + trading_config.FIXED_STOPLOSS
@@ -61,6 +61,7 @@ def start_strategy(prev_market_day_closing_price: float):
     elif gap > -1 * abs(trading_config.THRESHOLD_GAP):
         print(f'I will take long entry for {atm_strike} for {QTY} quantity')
 
+        atm_strike = get_atm_strike_for_price(opening_price, 'ce')
         option_contract_trading_symbol = get_weekly_ce_contract_trading_symbol(atm_strike)
         entry_type = 'long'
         stoploss = opening_price - trading_config.FIXED_STOPLOSS
@@ -106,15 +107,10 @@ def start_strategy(prev_market_day_closing_price: float):
 
         if should_exit:
             print(f"Exiting {trading_config.QTY} qty order for {option_contract_trading_symbol}")
-            exit_order_id = exit_order(
-                trading_symbol=option_contract_trading_symbol,
-                qty=trading_config.QTY,
-            )
-            print(f"Exited order. order id: {exit_order_id}")
-
+            exit_order(order_id=entry_order_id)
             break
 
-        time.sleep(0.2)  # 200 ms
+        tm.sleep(0.2)  # 200 ms
 
 
 if __name__ == '__main__':
