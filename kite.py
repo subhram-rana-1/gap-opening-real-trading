@@ -158,11 +158,56 @@ def get_stock_token_from_stock_symbol(stock_symbol: str) -> int:
     return instrument['instrument_token']
 
 
-def get_weekly_ce_atm_strike_for_price(price: float) -> str:
+def get_atm_strike_for_price(price: float) -> int:
     # TODO
-    return "nifty35325ceOct24"
+    return 25600
 
 
-def get_weekly_pe_atm_strike_for_price(price: float) -> str:
-    # TODO
-    return "nifty35325peOct24"
+def get_weekly_pe_contract_trading_symbol(strike: int) -> str:
+    """TODO: fetch from global instrument variable"""
+
+
+def get_weekly_ce_contract_trading_symbol(strike: int) -> str:
+    """TODO: fetch from global instrument variable"""
+
+
+def place_order(
+        trading_symbol: str,
+        qty: int,
+) -> str:
+    try:
+        order_id = KITE_CONNECT_CLIENT.place_order(
+            variety=KITE_CONNECT_CLIENT.VARIETY_REGULAR,
+            tradingsymbol=trading_symbol,
+            exchange=KITE_CONNECT_CLIENT.EXCHANGE_NFO,
+            transaction_type=KITE_CONNECT_CLIENT.TRANSACTION_TYPE_BUY,
+            quantity=qty,
+            order_type=KITE_CONNECT_CLIENT.ORDER_TYPE_MARKET,
+            product=KITE_CONNECT_CLIENT.PRODUCT_MIS,
+            validity=KITE_CONNECT_CLIENT.VALIDITY_DAY,  # might try VALIDITY_IOC
+        )
+
+        return order_id
+    except Exception as e:
+        print("[PLACE ORDER MANUALLY NOWWWW] Order placement failed: {}".format(e))
+
+
+def exit_order(
+        trading_symbol: str,
+        qty: int,
+) -> str:
+    try:
+        order_id = KITE_CONNECT_CLIENT.place_order(
+            variety=KITE_CONNECT_CLIENT.VARIETY_REGULAR,
+            tradingsymbol=trading_symbol,
+            exchange=KITE_CONNECT_CLIENT.EXCHANGE_NFO,
+            transaction_type=KITE_CONNECT_CLIENT.TRANSACTION_TYPE_SELL,
+            quantity=qty,
+            order_type=KITE_CONNECT_CLIENT.ORDER_TYPE_MARKET,
+            product=KITE_CONNECT_CLIENT.PRODUCT_MIS,
+            validity=KITE_CONNECT_CLIENT.VALIDITY_DAY,
+        )
+
+        return order_id
+    except Exception as e:
+        print("[ALEEEEEEERT !!!, Exit order manually Nowwwwwww...] Order exit failed: {}".format(e))
